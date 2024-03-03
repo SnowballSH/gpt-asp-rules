@@ -17,7 +17,7 @@ def gen_response(prompt, engine, prompt_cache):
             try:
                 prompt_cache[prompt] = openai.ChatCompletion.create(
                     messages=messages,
-                    model="gpt-4",
+                    model="gpt-4-0125-preview",
                     temperature=0,
                     max_tokens=1500)
             except:

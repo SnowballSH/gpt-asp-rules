@@ -13,7 +13,7 @@ def main(args):
         'constraints': 'prompts/6_gen_constraints.txt',
     }
     prefix = 'gpt_split_' + args.engine + '_'
-    puzzle_pipeline.path_cache = {k: f'caches/{prefix}{k}.json' for k in puzzle_pipeline.path_prompt}
+    puzzle_pipeline.path_cache = {k: f'old_caches/{prefix}{k}.json' for k in puzzle_pipeline.path_prompt}
     puzzle_pipeline.load_prompt()
     puzzle_pipeline.load_cache()
 

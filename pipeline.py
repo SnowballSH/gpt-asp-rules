@@ -7,8 +7,34 @@ from clingo.control import Control
 from clingo.symbol import parse_term
 import pandas as pd
 import openai
+from openai import OpenAI
 
 from api_keys import API_KEY, ORG_KEY
+
+client = OpenAI(api_key=API_KEY)
+
+class SerializableResponse:
+    def __init__(self, completion):
+        try:
+            self.choices = completion['choices']
+        except:
+            try:
+                self.choices = completion.choices
+            except:
+                raise Exception('Invalid completion')
+    
+    def __str__(self):
+        return str(self.choices)
+
+    def __repr__(self):
+        return str(self.choices)
+
+class SerializableEncoder(json.JSONEncoder):
+    def default(self, obj):
+        return obj.__dict__
+
+def serialize_completion(completion):
+    return {k: SerializableResponse(v) for k, v in completion.items()}
 
 # clingo context used to define python functions in clingo
 class Context:
@@ -44,8 +70,9 @@ class Pipeline:
             setattr(self, k, v)
         # initialze openai account
         if self.org_key:
-            openai.organization = self.org_key
-        openai.api_key = self.api_key
+            # TODO: The 'openai.organization' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(organization=self.org_key)'
+            # openai.organization = self.org_key
+            pass
 
     def load_prompt(self):
         for kind in self.path_prompt:
@@ -63,7 +90,7 @@ class Pipeline:
     def save_cache(self):
         for kind in self.path_cache:
             with open(self.path_cache[kind], 'w') as f:
-                json.dump(self.cache[kind], f)
+                json.dump(serialize_completion(self.cache[kind]), f, cls=SerializableEncoder)
 
     # take a kind and replace (dictionary), return the GPT3 response
     def gen_response(self, kind, replace):
@@ -72,29 +99,31 @@ class Pipeline:
         for k in replace:
             prompt = prompt.replace(k, replace[k])
         # generate and cache the response in cache if it's not cached before
-        if prompt not in self.cache[kind]:
+        if kind not in self.cache:
+            self.cache[kind] = {}
+        if prompt not in self.cache[kind]:          
             try:
                 if self.engine == 'gpt-4':
-                    messages = [{'role': 'user', 'content': prompt}]
+                    messages = [{'role': 'system', 'content': 'You are a logic analyzer to complete the requested task. You will NOT output any extra information. You will NOT use any code blocks. You will NOT start or end your response with introductions or conclusions.'}, {'role': 'user', 'content': prompt}]
                     try:
-                        self.cache[kind][prompt] = openai.ChatCompletion.create(
-                            messages=messages,
-                            model="gpt-4",
-                            temperature=self.temperature,
-                            max_tokens=self.max_tokens)
-                    except:
-                        print('GPT error.')
-                else:
-                    self.cache[kind][prompt] = openai.Completion.create(
-                        prompt=prompt,
-                        engine=self.engine,
+                        self.cache[kind][prompt] = client.chat.completions.create(messages=messages,
+                        model="gpt-4-0125-preview",
                         temperature=self.temperature,
                         max_tokens=self.max_tokens)
+                    except Exception as e:
+                        raise e
+                        print('GPT error.')
+                else:
+                    self.cache[kind][prompt] = client.completions.create(prompt=prompt,
+                    engine=self.engine,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens)
                 self.save_cache()
             except Exception as e:
-                print(e)
+                raise e
                 breakpoint()
                 self.cache[kind][prompt] = None
+        self.load_cache()
         if self.engine == 'gpt-4':
             return self.cache[kind][prompt]['choices'][0]['message']['content'].strip()
         return self.cache[kind][prompt]['choices'][0]['text'].strip()
@@ -106,6 +135,8 @@ class Pipeline:
         for k in replace:
             prompt = prompt.replace(k, replace[k])
         # generate and cache the response in cache if it's not cached before
+        if kind not in self.cache:
+            self.cache[kind] = {}
         if prompt not in self.cache[kind]:
             try:
                 if self.engine == 'gpt-4':
@@ -117,32 +148,33 @@ class Pipeline:
                     ex2 = 'Problem ' + ex2 + '\n\nConstraints:'
                     ex3 = 'Problem ' + ex3
                     messages = [
-                        {'role': 'system', 'content': 'You are a semantic parser to turn clues in a problem into logical rules using only provided constants and predicates.'},
+                        {'role': 'system', 'content': 'You are a semantic parser to turn clues in a problem into logical rules using only provided constants and predicates. You will NOT output any extra information. You will NOT use any code blocks. You will NOT start or end your response with introductions or conclusions.'},
                         {'role': 'system', 'name': 'example_user', 'content': general},
-                        {'role': 'system', 'name': 'example_assistant', 'content': 'Ok. I will only write constraints under the provided forms.'},
+                        {'role': 'system', 'name': 'example_assistant', 'content': 'Ok. I will only write constraints under the provided forms. I will not include any code blocks or extra uncommented information.'},
                         {'role': 'system', 'name': 'example_user', 'content': ex1},
                         {'role': 'system', 'name': 'example_assistant', 'content': response1},
                         {'role': 'system', 'name': 'example_user', 'content': ex2},
                         {'role': 'system', 'name': 'example_assistant', 'content': response2},
                         {'role': 'user', 'content': ex3},
                         ]
-                    self.cache[kind][prompt] = openai.ChatCompletion.create(
-                        messages=messages,
-                        model="gpt-4",
-                        temperature=self.temperature,
-                        max_tokens=self.max_tokens)
+                    self.cache[kind][prompt] = client.chat.completions.create(messages=messages,
+                    model="gpt-4-0125-preview",
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens)
                 else:
-                    self.cache[kind][prompt] = openai.Completion.create(
-                        prompt=prompt,
-                        engine=self.engine,
-                        temperature=self.temperature,
-                        max_tokens=self.max_tokens)
+                    self.cache[kind][prompt] = client.completions.create(prompt=prompt,
+                    engine=self.engine,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens)
                 self.save_cache()
             except Exception as e:
                 print(e)
                 breakpoint()
                 self.cache[kind][prompt] = None
+        
+        self.load_cache()
         if self.engine == 'gpt-4':
+            # print(self.cache[kind][prompt]['choices'][0]['message']['content'].strip())
             return self.cache[kind][prompt]['choices'][0]['message']['content'].strip()
         return self.cache[kind][prompt]['choices'][0]['text'].strip()
 
@@ -153,18 +185,21 @@ class Pipeline:
         for k in replace:
             prompt = prompt.replace(k, replace[k])
         # generate and cache the response in cache if it's not cached before
+        if kind not in self.cache:
+            self.cache[kind] = {}
         if prompt not in self.cache[kind]:
             try:
-                self.cache[kind][prompt] = openai.Completion.create(
-                    prompt=prompt,
-                    engine=self.engine,
-                    temperature=self.temperature,
-                    max_tokens=self.max_tokens)
+                self.cache[kind][prompt] = client.completions.create(prompt=prompt,
+                engine=self.engine,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens)
                 self.save_cache()
             except Exception as e:
                 print(e)
                 breakpoint()
                 self.cache[kind][prompt] = None
+        
+        self.load_cache()
         return self.cache[kind][prompt]['choices'][0]['text'].strip()
 
     # use ASP (clingo) to find answer sets
@@ -175,7 +210,7 @@ class Pipeline:
             opt (bool): if true, only optimal answer sets are returned
                         leave it to False when there is no weak constraint
         """
-        clingo_control = Control(['0', '--warn=none', '--opt-mode=optN', '-t', '4'])
+        clingo_control = Control(['0', '--warn=none', '--opt-mode=optN', '-t', '2'])
         models = []
         try:
             clingo_control.add('base', [], program)
