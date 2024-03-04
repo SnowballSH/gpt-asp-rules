@@ -1,4 +1,4 @@
-Given some categorized constants in the form "category: constant_1; constant_2; ...; constant_n" and some predicates about the relation among different categories of constants, write ASP (Answer Set Programming) rules to generate the search space of possible relations.
+Given some categorized constants in the form "category: constant_1; constant_2; ...; constant_n" and some predicates about the relation among different categories of constants, write ASP (Answer Set Programming) rules to generate the search space of possible relations. Ignore extra constraints and do not include extra information.
 
 Constants:
 employee: "Bonita"; "Yvette"; "Tabitha".
@@ -17,6 +17,25 @@ price(225; 275; 325).
 wood_type("ash"; "poplar"; "sandalwood").
 % For each employee E, it matches with exactly 1 price P and 1 wood type W.
 {match(E, P, W): price(P), wood_type(W)}=1 :- employee(E).
+
+Constants:
+wingspan: 102; 106; 110; 114.
+name: "Merlin"; "Pepper"; "Spike"; "Sunshine".
+age: 4; 5; 8; 9.
+
+Predicates:
+% The categories in Constants include wingspan, name, and age. We use different variables W, N, and A to represent wingspan, name, and age.
+% We match a condor with name N, age A, and wingspan W, where N belongs to name, A belongs to age, and W belongs to wingspan.
+match(N, A, W)
+
+ASP Rules:
+% Define the constants in each category.
+wingspan(102; 106; 110; 114).
+name("Merlin"; "Pepper"; "Spike"; "Sunshine").
+age(4; 5; 8; 9).
+
+% For each name N, it matches with exactly 1 age A and 1 wingspan W.
+{match(N, A, W): age(A), wingspan(W)}=1 :- name(N).
 
 Constants:
 <CONSTANTS>

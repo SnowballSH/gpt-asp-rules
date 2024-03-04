@@ -5,7 +5,25 @@ which says that if the conjunction "<L1> and <L2> and ... and <Ln>" is true, the
 One can also add a restriction that "exactly k of <C1>, <C2>, ..., <Cm> is true" by using the following form
 {<C1>; <C2>; ...; <Cm>}=k :- <L1>, <L2>, ..., <Ln>.
 
-Given a problem, extract all constraints from the clues in the problem using only the provided constants and predicates.
+Do not wrap or/and in parenthesis. This is a syntax error and should be avoided:
+<C1> :- <C2>, (<C3>; <C4>), <C5>
+
+Do not reuse variables in the same constraint, even if they aren't used.
+Instead, always clearly label the variables with different numbers for each object like this:
+match(N1,Pr1,D1), match(N2,Pr2,D2)
+
+Be careful when operating on quantity:
+<Q1> is <X> shorter/before/earlier/less than <Q2> means Q1=Q2-X
+<Q1> is <Y> longer/after/later/more than <Q2> means Q1=Q2+Y
+
+Be careful when operating on quality:
+<Q1> is shorter/before/earlier/less than <Q2> means Q1<Q2
+<Q1> is longer/after/later/more than <Q2> means Q1>Q2
+
+You should only compare two same categories. Do not compare two different categories (symbols). Q1<Q2, Q1>Q2 or Q1!=Q2 is good.
+
+Analyze step by step and include chain of thought in the comments (%). All non-code text must be commented. Pause and think when dealing with comparisons or arithmetics.
+Given a problem, clue by clue, carefully extract all constraints from the clues in the problem using only the provided constants and predicates. If any category the question asks for is not in the clues or the constants, silently ignore it, do not include it in the constraints, and pretend it does not exist. Wrap your code in one markdown code block.
 
 Problem 1:
 "Against the Grain" offers hand-made wooden furniture at reasonable prices. Each item is made by an in-house employee. Using only the clues that follow, match each item to the employee who crafted it, and determine its price and the type of wood used to make it. Remember, as with all grid-based logic puzzles, no option in any category will ever be used more than once.
@@ -85,6 +103,51 @@ C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), C1="Argentina", S2=2.
 {S=6; C="Grenada"}=1 :- assign(C,S,G), G=2.
 
 Problem 3:
+Nicholas and Edith are having a small dinner party this evening at their home in Cedar Valley, and they've decided to open a select number of rare wines from their personal collection to celebrate the occasion. Using only the clues below, match each wine to its vintage (year) and vineyard, and determine the type of each. Remember, as with all grid-based logic puzzles, no option in any category will ever be used more than once.
+1. The Luzagueil is a chardonnay.
+2. The Annata Branco is either the 1992 wine or the syrah.
+3. The Friambliss is a syrah.
+4.1 The pinot gris and the 1984 bottle are different.
+4.2 The pinot gris is either the Luzagueil or the Zifennwein.
+4.3 The 1984 bottle is either the Luzagueil or the Zifennwein.
+5. The pinot gris was bottled 4 years after the merlot.
+
+Constants:
+vintages: 1984; 1988; 1992; 1996.
+wines: Annata Branco; Friambliss; Luzagueil; Zifennwein.
+types: chardonnay; merlot; pinot gris; syrah.
+
+Predicates:
+% The categories in Constants include vintage, wine, and type. We use different variables V, W, and T to represent vintage, wine, and type.
+% We match a wine W with vintage V and type T, where W belongs to wine, V belongs to vintage, and T belongs to type.
+match(W, V, T)
+
+Constraints:
+% No option in any category will ever be used more than once.
+{W1=W2; V1=V2; T1=T2}=0 :- match(W1,V1,T1), match(W2,V2,T2), (W1,V1,T1)!=(W2,V2,T2).
+
+% 1. The Luzagueil is a chardonnay.
+T="chardonnay" :- match(W,V,T), W="Luzagueil".
+
+% 2. The Annata Branco is either the 1992 wine or the syrah.
+{V=1992; T="syrah"}=1 :- match(W,V,T), W="Annata Branco".
+
+% 3. The Friambliss is a syrah.
+T="syrah" :- match(W,V,T), W="Friambliss".
+
+% 4.1 The pinot gris and the 1984 bottle are different.
+W1!=W2 :- match(W1,V1,T1), match(W2,V2,T2), T1="pinot gris", V2=1984.
+
+% 4.2 The pinot gris is either the Luzagueil or the Zifennwein.
+{W="Luzagueil"; W="Zifennwein"}=1 :- match(W,V,T), T="pinot gris".
+
+% 4.3 The 1984 bottle is either the Luzagueil or the Zifennwein.
+{W="Luzagueil"; W="Zifennwein"}=1 :- match(W,V,T), V=1984.
+
+% 5. The pinot gris was bottled 4 years after the merlot.
+V1=V2+4 :- match(W1,V1,T1), match(W2,V2,T2), T1="pinot gris", T2="merlot".
+
+Problem 4:
 <STORY>
 <CONSTRAINTS>
 

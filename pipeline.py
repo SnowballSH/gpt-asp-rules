@@ -55,7 +55,7 @@ class Pipeline:
         self.api_key = API_KEY
         self.engine = 'text-davinci-003'
         self.temperature = 0.
-        self.max_tokens = 1500
+        self.max_tokens = 3000
         self.path_prompt = {} # store the mapping from kind (str) to path of prompt file (str)
         self.prompt = {} # a mapping from prompt kind (str) to the prompt (str)
         ###########
@@ -104,10 +104,10 @@ class Pipeline:
         if prompt not in self.cache[kind]:          
             try:
                 if self.engine == 'gpt-4':
-                    messages = [{'role': 'system', 'content': 'You are a logic analyzer to complete the requested task. You will NOT output any extra information. You will NOT use any code blocks. You will NOT start or end your response with introductions or conclusions.'}, {'role': 'user', 'content': prompt}]
+                    messages = [{'role': 'user', 'content': prompt}]
                     try:
                         self.cache[kind][prompt] = client.chat.completions.create(messages=messages,
-                        model="gpt-4-0125-preview",
+                        model="gpt-4-turbo-preview",
                         temperature=self.temperature,
                         max_tokens=self.max_tokens)
                     except Exception as e:
@@ -141,24 +141,28 @@ class Pipeline:
             try:
                 if self.engine == 'gpt-4':
                     # split prompt into different messages
-                    general, ex1, ex2, ex3 = prompt.split('\n\nProblem ')
+                    general, ex1, ex2, ex3, ex4 = prompt.split('\n\nProblem ')
                     ex1, response1 = ex1.split('\n\nConstraints:\n')
                     ex2, response2 = ex2.split('\n\nConstraints:\n')
+                    ex3, response3 = ex3.split('\n\nConstraints:\n')
                     ex1 = 'Problem ' + ex1 + '\n\nConstraints:'
                     ex2 = 'Problem ' + ex2 + '\n\nConstraints:'
-                    ex3 = 'Problem ' + ex3
+                    ex3 = 'Problem ' + ex3 + '\n\nConstraints:'
+                    ex4 = 'Problem ' + ex4
                     messages = [
-                        {'role': 'system', 'content': 'You are a semantic parser to turn clues in a problem into logical rules using only provided constants and predicates. You will NOT output any extra information. You will NOT use any code blocks. You will NOT start or end your response with introductions or conclusions.'},
+                        {'role': 'system', 'content': 'You are a semantic parser to turn clues in a problem into logical rules using only provided constants and predicates.'},
                         {'role': 'system', 'name': 'example_user', 'content': general},
-                        {'role': 'system', 'name': 'example_assistant', 'content': 'Ok. I will only write constraints under the provided forms. I will not include any code blocks or extra uncommented information.'},
+                        {'role': 'system', 'name': 'example_assistant', 'content': 'Ok. I will only write constraints under the provided forms.'},
                         {'role': 'system', 'name': 'example_user', 'content': ex1},
                         {'role': 'system', 'name': 'example_assistant', 'content': response1},
                         {'role': 'system', 'name': 'example_user', 'content': ex2},
                         {'role': 'system', 'name': 'example_assistant', 'content': response2},
-                        {'role': 'user', 'content': ex3},
+                        {'role': 'system', 'name': 'example_user', 'content': ex3},
+                        {'role': 'system', 'name': 'example_assistant', 'content': response3},
+                        {'role': 'user', 'content': ex4},
                         ]
                     self.cache[kind][prompt] = client.chat.completions.create(messages=messages,
-                    model="gpt-4-0125-preview",
+                    model="gpt-4-turbo-preview",
                     temperature=self.temperature,
                     max_tokens=self.max_tokens)
                 else:

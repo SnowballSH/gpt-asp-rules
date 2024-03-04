@@ -43,9 +43,15 @@ def data_gen(dataset_name='test', num_data=50):
 
 # remove the wrong category discussed in story
 def data_correction(dataset_name, puzzles):
-    if dataset_name == 'test':
-        puzzles[11][0] = puzzles[11][0].replace('budget, ', '')
-        puzzles[19][0] = puzzles[19][0]\
-            .replace(', or featured people who played the same position', '')\
-            .replace(''', and determine the player's position''', '')
-        puzzles[48][0] = puzzles[48][0].replace('budget, ', '')
+    try:
+        if dataset_name == 'test':
+            puzzles[11][0] = puzzles[11][0].replace('budget, ', '')
+            puzzles[19][0] = puzzles[19][0]\
+                .replace(', or featured people who played the same position', '')\
+                .replace(''', and determine the player's position''', '')
+            puzzles[48][0] = puzzles[48][0].replace('budget, ', '')
+        elif dataset_name == "train":
+            for i in range(50):
+                puzzles[i][0] = puzzles[i][0].replace(', and determine the reported shape of the unidentified object', '')
+    except IndexError:
+        pass

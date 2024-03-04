@@ -3,6 +3,18 @@ import argparse
 from dataset150 import data_gen
 from pipeline import Pipeline
 
+def extract_code_block(s: str) -> str:
+    start_marker = "```"
+    end_marker = "```"
+    start_index = s.find(start_marker)
+    if start_index != -1:
+        end_index = s.find(end_marker, start_index + len(start_marker))
+        if end_index != -1:
+            # Extract the content between the markers, excluding the language specifier
+            content_start = s.find('\n', start_index) + 1
+            return s[content_start:end_index].strip()
+    return s
+
 def main(args):
     puzzle_pipeline = Pipeline(vars(args))
     puzzle_pipeline.path_prompt = {
@@ -13,7 +25,7 @@ def main(args):
         'constraints': 'prompts/6_gen_constraints.txt',
     }
     prefix = 'gpt_split_' + args.engine + '_'
-    puzzle_pipeline.path_cache = {k: f'old_caches/{prefix}{k}.json' for k in puzzle_pipeline.path_prompt}
+    puzzle_pipeline.path_cache = {k: f'caches/{prefix}{k}.json' for k in puzzle_pipeline.path_prompt}
     puzzle_pipeline.load_prompt()
     puzzle_pipeline.load_cache()
 
@@ -56,8 +68,10 @@ def main(args):
         rules_constraints = puzzle_pipeline.gen_response_constraints('constraints', replace)
 
         # Step 7: compute answer sets
-        rules_all = rules_search_space + '\n\n' + rules_constraints
+        rules_all = extract_code_block(rules_search_space) + '\n\n' + extract_code_block(rules_constraints)
         answer_sets = puzzle_pipeline.gen_answer_set(rules_all)
+
+        print(f"Puzzle {i} has {len(answer_sets)} answer sets.")
 
         # Step 8: evaluate final prediction
         if len(answer_sets) != 1:
