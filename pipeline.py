@@ -152,7 +152,7 @@ class Pipeline:
                     messages = [
                         {'role': 'system', 'content': 'You are a semantic parser to turn clues in a problem into logical rules using only provided constants and predicates.'},
                         {'role': 'system', 'name': 'example_user', 'content': general},
-                        {'role': 'system', 'name': 'example_assistant', 'content': 'Ok. I will only write constraints under the provided forms.'},
+                        {'role': 'system', 'name': 'example_assistant', 'content': 'Ok. I will only write constraints under the provided forms. I will write code for every single clue and not assume anything.'},
                         {'role': 'system', 'name': 'example_user', 'content': ex1},
                         {'role': 'system', 'name': 'example_assistant', 'content': response1},
                         {'role': 'system', 'name': 'example_user', 'content': ex2},

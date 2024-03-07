@@ -25,7 +25,7 @@ def main(args):
         'constraints': 'prompts/6_gen_constraints.txt',
     }
     prefix = 'gpt_split_' + args.engine + '_'
-    puzzle_pipeline.path_cache = {k: f'caches/{prefix}{k}.json' for k in puzzle_pipeline.path_prompt}
+    puzzle_pipeline.path_cache = {k: f'test_caches/{prefix}{k}.json' for k in puzzle_pipeline.path_prompt}
     puzzle_pipeline.load_prompt()
     puzzle_pipeline.load_cache()
 
@@ -65,10 +65,13 @@ def main(args):
 
         # Step 6: generate the constraints in rule format
         # rules_constraints = puzzle_pipeline.gen_response('constraints', replace)
-        rules_constraints = puzzle_pipeline.gen_response_constraints('constraints', replace)
+        rules_constraints = puzzle_pipeline.gen_response_constraints('constraints', replace)\
 
         # Step 7: compute answer sets
         rules_all = extract_code_block(rules_search_space) + '\n\n' + extract_code_block(rules_constraints)
+
+        print(rules_all)
+
         answer_sets = puzzle_pipeline.gen_answer_set(rules_all)
 
         print(f"Puzzle {i} has {len(answer_sets)} answer sets.")

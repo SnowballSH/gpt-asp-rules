@@ -6,7 +6,12 @@ One can also add a restriction that "exactly k of <C1>, <C2>, ..., <Cm> is true"
 {<C1>; <C2>; ...; <Cm>}=k :- <L1>, <L2>, ..., <Ln>.
 
 Do not wrap or/and in parenthesis. This is a syntax error and should be avoided:
-<C1> :- <C2>, (<C3>; <C4>), <C5>
+<C1> :- <C2>, (<C3>; <C4>)
+
+"either ... or" should be in the beginning of a line, before :-. For example, the statement
+<Q1> is either <Q2> or <Q3>
+is translated to
+{<C1>=<Q1>; <C2>=<Q2>}=1 :- match(C1,C2,C3), <C3>=<Q3>.
 
 Do not reuse variables in the same constraint, even if they aren't used.
 Instead, always clearly label the variables with different numbers for each object like this:
@@ -23,7 +28,9 @@ Be careful when operating on quality:
 You should only compare two same categories. Do not compare two different categories (symbols). Q1<Q2, Q1>Q2 or Q1!=Q2 is good.
 
 Analyze step by step and include chain of thought in the comments (%). All non-code text must be commented. Pause and think when dealing with comparisons or arithmetics.
-Given a problem, clue by clue, carefully extract all constraints from the clues in the problem using only the provided constants and predicates. If any category the question asks for is not in the clues or the constants, silently ignore it, do not include it in the constraints, and pretend it does not exist. Wrap your code in one markdown code block.
+**Always label what each label (Q1, Q2, ...) refers to in the comments before writing your code. Include notes to help your thinking.**
+**Always generate code for ALL clues. Remember, code for ALL clues. EVERY number. If there are multiple parts, write code for ALL parts.**
+Given a problem, clue by clue, carefully extract all constraints from the clues in the problem using only the provided constants and predicates. Wrap your code in one markdown code block.
 
 Problem 1:
 "Against the Grain" offers hand-made wooden furniture at reasonable prices. Each item is made by an in-house employee. Using only the clues that follow, match each item to the employee who crafted it, and determine its price and the type of wood used to make it. Remember, as with all grid-based logic puzzles, no option in any category will ever be used more than once.
@@ -44,18 +51,23 @@ match(E, P, W)
 
 Constraints:
 % No option in any category will ever be used more than once.
+% Note: 1 is the first item, 2 is the second item. E1, P1, and W1 are different from E2, P2, and W2.
 {E1=E2; P1=P2; W1=W2}=0 :- match(E1,P1,W1), match(E2,P2,W2), (E1,P1,W1)!=(E2,P2,W2).
 
 % 1. Bonita's piece costs $325.
+% When E is "Bonita", P is 325.
 P=325 :- match(E,P,W), E="Bonita".
 
 % 2. The item made of poplar costs more than Yvette's piece.
+% Note: 1 is the item made of poplar, 2 is Yvette's piece. P1 is more than P2.
 P1>P2 :- match(E1,P1,W1), match(E2,P2,W2), W1="poplar", E2="Yvette".
 
 % 3. Tabitha's item costs 50 dollars less than the piece made of sandalwood.
+% Note: 1 is Tabitha's item, 2 is the piece made of sandalwood. P1 is P2-50.
 P1=P2-50 :- match(E1,P1,W1), match(E2,P2,W2), E1="Tabitha", W2="sandalwood".
 
 % 4. The $275 item is either the piece made of ash or Yvette's item.
+% Note: When P is 275, one of {W is "ash", E is "Yvette"} is true.
 {W="ash"; E="Yvette"}=1 :- match(E,P,W), P=275.
 
 Problem 2:
@@ -63,9 +75,11 @@ The Winter Olympics have just wrapped up in Norway. Using only the clues that fo
 1. The four teams are the team from Bolivia, the team that won 3 gold medals, the team that won 6 silver medals, and the team from Argentina.
 2. The team from Oman and the team that won 10 silver medals are different.
 3. The team from Oman finished with 2 gold medals or finished with 1 gold medal.
-5. The squad that won 3 gold medals, the squad that won 6 silver medals and the squad from Bolivia were all different teams.
+5.1 The squad that won 3 gold medals and the squad that won 6 silver medals are different teams.
+5.2 The squad that won 6 silver medals and the squad from Bolivia are different teams.
+5.3 The squad from Bolivia and the squad that won 3 gold medals are different teams.
 6. Neither the team from Argentina nor the squad that won 2 silver medals is the squad that won 4 gold medals.
-8. The squad that won 2 gold medals is either the squad that won 6 silver medals or the team from Grenada.
+7. The squad that won 2 gold medals is either the squad that won 6 silver medals or the team from Grenada.
 
 Constants:
 country: "Argentina"; "Bolivia"; "Grenada"; "Oman".
@@ -79,27 +93,40 @@ assign(C, S, G)
 
 Constraints:
 % No option in any category will ever be used more than once.
+% Note: 1 is the first team, 2 is the second team. C1, S1, and G1 are different from C2, S2, and G2.
 {C1=C2; S1=S2; G1=G2}=0 :- assign(C1,S1,G1), assign(C2,S2,G2), (C1,S1,G1)!=(C2,S2,G2).
 
 % 1. The four teams are the team from Bolivia, the team that won 3 gold medals, the team that won 6 silver medals, and the team from Argentina.
+% Note: One of {C is "Bolivia", G is 3, S is 6, C is "Argentina"} is true.
 {C="Bolivia"; G=3; S=6; C="Argentina"}=1 :- assign(C,S,G).
 
 % 2. The team from Oman and the team that won 10 silver medals are different.
+% Note: 1 is the team from Oman, 2 is the team that won 10 silver medals. C1 and C2 are different.
 C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), C1="Oman", S2=10.
 
 % 3. The team from Oman finished with 2 gold medals or finished with 1 gold medal.
+% Note: When C is "Oman", one of {G is 2, G is 1} is true.
 {G=2; G=1}=1 :- assign(C,S,G), C="Oman".
 
-% 5. The squad that won 3 gold medals, the squad that won 6 silver medals and the squad from Bolivia were all different teams.
-C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), assign(C3,S3,G3), G1=3, S2=6, C3="Bolivia".
-C2!=C3 :- assign(C1,S1,G1), assign(C2,S2,G2), assign(C3,S3,G3), G1=3, S2=6, C3="Bolivia".
-C1!=C3 :- assign(C1,S1,G1), assign(C2,S2,G2), assign(C3,S3,G3), G1=3, S2=6, C3="Bolivia".
+% Even though clue 5 looks redundant, it is not. I will still generate code for all of them.
+% 5.1 The squad that won 3 gold medals and the squad that won 6 silver medals are different teams.
+% Note: 1 is the squad that won 3 gold medals, 2 is the squad that won 6 silver medals.
+C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), G1=3, S2=6.
+
+% 5.2 The squad that won 6 silver medals and the squad from Bolivia are different teams.
+% Note: 1 is the squad that won 6 silver medals, 2 is the squad from Bolivia.
+C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), S1=6, C2="Bolivia".
+
+% 5.3 The squad from Bolivia and the squad that won 3 gold medals are different teams.
+% Note: 1 is the squad from Bolivia, 2 is the squad that won 3 gold medals.
+C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), C1="Bolivia", G2=3.
 
 % 6. Neither the team from Argentina nor the squad that won 2 silver medals is the squad that won 4 gold medals.
+% Note: 1 is the team from Argentina, 2 is the squad that won 2 silver medals. none of {C is "Argentina", S is 2, G is 4} is true.
 {C="Argentina"; S=2}=0 :- assign(C,S,G), G=4.
-C1!=C2 :- assign(C1,S1,G1), assign(C2,S2,G2), C1="Argentina", S2=2.
 
-% 8. The squad that won 2 gold medals is either the squad that won 6 silver medals or the team from Grenada.
+% 7. The squad that won 2 gold medals is either the squad that won 6 silver medals or the team from Grenada.
+% Note: When G is 2, one of {S is 6, C is "Grenada"} is true.
 {S=6; C="Grenada"}=1 :- assign(C,S,G), G=2.
 
 Problem 3:
@@ -124,27 +151,36 @@ match(W, V, T)
 
 Constraints:
 % No option in any category will ever be used more than once.
+% Note: 1 is the first wine, 2 is the second wine. W1, V1, and T1 are different from W2, V2, and T2.
 {W1=W2; V1=V2; T1=T2}=0 :- match(W1,V1,T1), match(W2,V2,T2), (W1,V1,T1)!=(W2,V2,T2).
 
 % 1. The Luzagueil is a chardonnay.
+% Note: When W is "Luzagueil", T is "chardonnay".
 T="chardonnay" :- match(W,V,T), W="Luzagueil".
 
 % 2. The Annata Branco is either the 1992 wine or the syrah.
+% Note: When W is "Annata Branco", one of {V is 1992, T is "syrah"} is true.
 {V=1992; T="syrah"}=1 :- match(W,V,T), W="Annata Branco".
 
 % 3. The Friambliss is a syrah.
+% Note: When W is "Friambliss", T is "syrah".
 T="syrah" :- match(W,V,T), W="Friambliss".
 
+% Even though clue 4 looks redundant, it is not. I will still generate code for all of them.
 % 4.1 The pinot gris and the 1984 bottle are different.
+% Note: 1 is the pinot gris, 2 is the 1984 bottle. W1 and W2 are different.
 W1!=W2 :- match(W1,V1,T1), match(W2,V2,T2), T1="pinot gris", V2=1984.
 
 % 4.2 The pinot gris is either the Luzagueil or the Zifennwein.
+% Note: When W is "pinot gris", one of {W is "Luzagueil", W is "Zifennwein"} is true.
 {W="Luzagueil"; W="Zifennwein"}=1 :- match(W,V,T), T="pinot gris".
 
 % 4.3 The 1984 bottle is either the Luzagueil or the Zifennwein.
+% Note: When V is 1984, one of {W is "Luzagueil", W is "Zifennwein"} is true.
 {W="Luzagueil"; W="Zifennwein"}=1 :- match(W,V,T), V=1984.
 
 % 5. The pinot gris was bottled 4 years after the merlot.
+% Note: 1 is the pinot gris, 2 is the merlot. V1 is V2+4.
 V1=V2+4 :- match(W1,V1,T1), match(W2,V2,T2), T1="pinot gris", T2="merlot".
 
 Problem 4:

@@ -46,12 +46,18 @@ def data_correction(dataset_name, puzzles):
     try:
         if dataset_name == 'test':
             puzzles[11][0] = puzzles[11][0].replace('budget, ', '')
+            puzzles[17][0] = puzzles[17][0].replace(' and the month in which it was completed', '')
+            puzzles[18][0] = puzzles[18][0].replace(' and when', '')
             puzzles[19][0] = puzzles[19][0]\
                 .replace(', or featured people who played the same position', '')\
                 .replace(''', and determine the player's position''', '')
+            puzzles[20][0] = puzzles[20][0].replace(' and the name of the restaurant each chef works at', '')
             puzzles[48][0] = puzzles[48][0].replace('budget, ', '')
         elif dataset_name == "train":
             for i in range(50):
                 puzzles[i][0] = puzzles[i][0].replace(', and determine the reported shape of the unidentified object', '')
+                puzzles[i][0] = puzzles[i][0].replace('shark species', '')
+                puzzles[i][0] = puzzles[i][0].replace('to study a different species of shark', 'on a different ship')
+                puzzles[i][0] = puzzles[i][0].replace(', and determine the author of each title', '')
     except IndexError:
         pass
